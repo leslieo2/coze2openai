@@ -69,7 +69,7 @@ app.post("/v1/chat/completions", async (req, res) => {
       const content = message.content;
       
       chatHistory.push({
-        role: role,
+        role: role === "system" ? "assistant" : role,
         content: content,
         content_type: "text"
       });
