@@ -125,7 +125,7 @@ app.post("/v1/chat/completions", async (req, res) => {
           }
           if (chunkObj.event === "message") {
             if (
-              chunkObj.message.role === "system" &&
+              chunkObj.message.role === "assistant" &&
               chunkObj.message.type === "answer"
             ) {
               let chunkContent = chunkObj.message.content;
@@ -208,7 +208,7 @@ app.post("/v1/chat/completions", async (req, res) => {
             const messages = data.messages;
             const answerMessage = messages.find(
               (message) =>
-                message.role === "system" && message.type === "answer"
+                message.role === "assistant" && message.type === "answer"
             );
 
             if (answerMessage) {
