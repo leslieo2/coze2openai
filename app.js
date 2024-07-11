@@ -13,7 +13,7 @@ var corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   "Access-Control-Allow-Headers":
-    "DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization",
+      "DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization",
   "Access-Control-Max-Age": "86400",
 };
 
@@ -22,7 +22,7 @@ app.use((req, res, next) => {
   if (req.method === 'OPTIONS') {
     return res.status(204).end();
   }
-  console.log('Request Method:', req.method); 
+  console.log('Request Method:', req.method);
   console.log('Request Path:', req.path);
   next();
 });
@@ -42,7 +42,7 @@ app.get("/", (req, res) => {
 
 app.post("/v1/chat/completions", async (req, res) => {
   const authHeader =
-    req.headers["authorization"] || req.headers["Authorization"];
+      req.headers["authorization"] || req.headers["Authorization"];
   if (!authHeader) {
     return res.status(401).json({
       code: 401,
@@ -67,7 +67,7 @@ app.post("/v1/chat/completions", async (req, res) => {
       const message = messages[i];
       const role = message.role;
       const content = message.content;
-      
+
       chatHistory.push({
         role: role === "system" ? "assistant" : role,
         content: content,
@@ -125,8 +125,8 @@ app.post("/v1/chat/completions", async (req, res) => {
           }
           if (chunkObj.event === "message") {
             if (
-              chunkObj.message.role === "assistant" &&
-              chunkObj.message.type === "answer"
+                chunkObj.message.role === "assistant" &&
+                chunkObj.message.type === "answer"
             ) {
               let chunkContent = chunkObj.message.content;
 
@@ -134,7 +134,7 @@ app.post("/v1/chat/completions", async (req, res) => {
                 const chunkId = `chatcmpl-${Date.now()}`;
                 const chunkCreated = Math.floor(Date.now() / 1000);
                 res.write(
-                  "data: " +
+                    "data: " +
                     JSON.stringify({
                       id: chunkId,
                       object: "chat.completion.chunk",
@@ -158,7 +158,7 @@ app.post("/v1/chat/completions", async (req, res) => {
             const chunkId = `chatcmpl-${Date.now()}`;
             const chunkCreated = Math.floor(Date.now() / 1000);
             res.write(
-              "data: " +
+                "data: " +
                 JSON.stringify({
                   id: chunkId,
                   object: "chat.completion.chunk",
@@ -187,12 +187,12 @@ app.post("/v1/chat/completions", async (req, res) => {
             console.error('Error: ', errorMsg);
 
             res.write(
-                    `data: ${JSON.stringify({ error: {
-                        error: "Unexpected response from Coze API.",
-                        message: errorMsg
-                      }
-                    })}\n\n`
-                );
+                `data: ${JSON.stringify({ error: {
+                    error: "Unexpected response from Coze API.",
+                    message: errorMsg
+                  }
+                })}\n\n`
+            );
             res.write("data: [DONE]\n\n");
             res.end();
           }
@@ -202,72 +202,69 @@ app.post("/v1/chat/completions", async (req, res) => {
       });
     } else {
       resp
-        .json()
-        .then((data) => {
-          if (data.code === 0 && data.msg === "success") {
-            const messages = data.messages;
-            const answerMessage = messages.find(
+      .json()
+      .then((data) => {
+        if (data.code === 0 && data.msg === "success") {
+          const messages = data.messages;
+          const answerMessage = messages.find(
               (message) =>
-                message.role === "assistant" && message.type === "answer"
-            );
+                  message.role === "assistant" && message.type === "answer"
+          );
 
-            if (answerMessage) {
-              const result = answerMessage.content.trim();
-              const usageData = {
-                prompt_tokens: 100,
-                completion_tokens: 10,
-                total_tokens: 110,
-              };
-              const chunkId = `chatcmpl-${Date.now()}`;
-              const chunkCreated = Math.floor(Date.now() / 1000);
+          if (answerMessage) {
+            const result = answerMessage.content.trim();
+            const usageData = {
+              prompt_tokens: 100,
+              completion_tokens: 10,
+              total_tokens: 110,
+            };
+            const chunkId = `chatcmpl-${Date.now()}`;
+            const chunkCreated = Math.floor(Date.now() / 1000);
 
-              const formattedResponse = {
-                id: chunkId,
-                object: "chat.completion",
-                created: chunkCreated,
-                model: req.body.model,
-                choices: [
-                  {
-                    index: 0,
-                    message: {
-                      role: "system",
-                      content: result,
-                    },
-                    logprobs: null,
-                    finish_reason: "stop",
+            const formattedResponse = {
+              id: chunkId,
+              object: "chat.completion",
+              created: chunkCreated,
+              model: req.body.model,
+              choices: [
+                {
+                  index: 0,
+                  message: {
+                    role: "system",
+                    content: result,
                   },
-                ],
-                usage: usageData,
-                system_fingerprint: "fp_2f57f81c11",
-              };
-              const jsonResponse = JSON.stringify(formattedResponse, null, 2);
-              res.set("Content-Type", "application/json");
-              res.send(jsonResponse);
-            } else {
-              res.status(500).json({ error: "No answer message found." });
-            }
+                  logprobs: null,
+                  finish_reason: "stop",
+                },
+              ],
+              usage: usageData,
+              system_fingerprint: "fp_2f57f81c11",
+            };
+            const jsonResponse = JSON.stringify(formattedResponse, null, 2);
+            res.set("Content-Type", "application/json");
+            res.send(jsonResponse);
           } else {
-            console.error("Error:", data.msg);
-            res
-              .status(500)
-              .json({ error: {
-                    error: "Unexpected response from Coze API.",
-                    message: data.msg
-                }
-              });
+            res.status(500).json({ error: "No answer message found." });
           }
-        })
-        .catch((error) => {
-          console.error("Error parsing JSON:", error);
-          res.status(500).json({ error: "Error parsing JSON response." });
-        });
+        } else {
+          console.error("Error:", data.msg);
+          res
+          .status(500)
+          .json({ error: {
+              error: "Unexpected response from Coze API.",
+              message: data.msg
+            }
+          });
+        }
+      })
+      .catch((error) => {
+        console.error("Error parsing JSON:", error);
+        res.status(500).json({ error: "Error parsing JSON response." });
+      });
     }
   } catch (error) {
     console.error("Error:", error);
   }
 });
 
-const server = app.listen(process.env.PORT || 3000, function () {
-  let port = server.address().port
-  console.log('Ready! Listening all IP, port: %s. Example: at http://localhost:%s', port, port)
-});
+export default app;
